@@ -253,18 +253,31 @@ export default function FaqChatbot() {
   // Window controls
   // PUBLIC_INTERFACE
   const handleToggle = () => {
-    setIsOpen(v => !v);
-    setIsMinimized(false);
+    if (isMinimized) {
+      // If minimized, restore the window
+      setIsMinimized(false);
+    } else {
+      // If not open, open the window
+      setIsOpen(v => !v);
+    }
     setTimeout(() => {
       if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }, 350);
   };
   // PUBLIC_INTERFACE
-  const handleClose = () => setIsOpen(false);
+  const handleClose = () => {
+    setIsOpen(false);
+    setIsMinimized(false);
+  };
   // PUBLIC_INTERFACE
-  const handleMinimize = () => setIsMinimized(true);
+  const handleMinimize = () => {
+    setIsMinimized(true);
+    // Keep isOpen true so the floating button remains accessible
+  };
   // PUBLIC_INTERFACE
-  const handleRestore = () => { setIsMinimized(false); setIsOpen(true); };
+  const handleRestore = () => {
+    setIsMinimized(false);
+  };
 
   // Render FAQ list
   function renderFaqList() {
@@ -433,9 +446,9 @@ export default function FaqChatbot() {
   // Main render
   return (
     <>
-      {/* Floating button to open chatbot */}
+      {/* Floating button to open chatbot - shows when not open OR when minimized */}
       <AnimatePresence>
-        {!isOpen &&
+        {(!isOpen || isMinimized) &&
           <motion.button
             className="faq-chatbot-floating-btn"
             initial="initial"
@@ -445,20 +458,20 @@ export default function FaqChatbot() {
             transition={{ type: "spring", stiffness: 330, damping: 30 }}
             onClick={handleToggle}
             tabIndex={0}
-            aria-label="Open FAQ Chatbot"
+            aria-label={isMinimized ? "Restore FAQ Chatbot" : "Open FAQ Chatbot"}
           >
             <FiMessageCircle size={28} />
           </motion.button>
         }
       </AnimatePresence>
-      {/* The chat window itself */}
+      {/* The chat window itself - shows when open AND not minimized */}
       <AnimatePresence>
-        {isOpen &&
+        {isOpen && !isMinimized &&
           <motion.div
-            className={`faq-chatbot-window animate__animated ${isMinimized ? 'animate__fadeOutDown' : "animate__fadeInUp"}`}
+            className="faq-chatbot-window animate__animated animate__fadeInUp"
             variants={chatbotWindowVariants}
             initial="hidden"
-            animate={!isMinimized ? "visible" : "hidden"}
+            animate="visible"
             exit="exit"
             transition={{ duration: 0.25 }}
             style={{ zIndex: 9999 }}
@@ -513,30 +526,9 @@ export default function FaqChatbot() {
                 {renderFaqList()}
               </div>
             </div>
-            {/* Minimized state bar (visible only if minimized) */}
-            {isMinimized &&
-              <div className="faq-chatbot-minimized-bar" onClick={handleRestore} tabIndex={0}>
-                <FiMessageCircle /> FAQ Chatbot (Click to restore)
-              </div>}
           </motion.div>
         }
       </AnimatePresence>
-      {/* Re-minimize button (when minimized but window closed, show docked icon) */}
-      {isMinimized && !isOpen &&
-        <motion.button
-          className="faq-chatbot-floating-btn"
-          initial="initial"
-          animate="visible"
-          exit="initial"
-          variants={floatingButtonVariants}
-          transition={{ type: "spring", stiffness: 330, damping: 30 }}
-          onClick={handleRestore}
-          tabIndex={0}
-          aria-label="Restore FAQ Chatbot"
-        >
-          <FiMessageCircle size={28} />
-        </motion.button>
-      }
     </>
   );
 }
