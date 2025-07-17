@@ -1,47 +1,764 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1A1A1A" />
-    <meta
-      name="description"
-      content="KAVIA AI Application"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        /* Custom CSS Variables for Theme Management */
+        :root {
+            --primary-color: #2960c7;
+            --secondary-color: #ffffff;
+            --accent-color: #ffb13b;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #282c34;
+            --text-secondary: #61dafb;
+            --border-color: #e9ecef;
+            --button-bg: #2960c7;
+            --button-text: #ffffff;
+        }
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <!-- Load Inter font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <title>KAVIA App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #282c34;
+            --text-primary: #ffffff;
+            --text-secondary: #61dafb;
+            --border-color: #404040;
+            --button-bg: #0056b3;
+            --button-text: #ffffff;
+        }
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+        /* Custom animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px) scale(0.92);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+        @keyframes slideOutDown {
+            from {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(80px) scale(0.95);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeOutScale {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        @keyframes loadingDotBlink {
+            0% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        /* Custom classes */
+        .chatbot-slide-in {
+            animation: slideInUp 0.25s ease-out;
+        }
+
+        .chatbot-slide-out {
+            animation: slideOutDown 0.16s ease-in;
+        }
+
+        .button-scale-in {
+            animation: fadeInScale 0.3s ease-out;
+        }
+
+        .button-scale-out {
+            animation: fadeOutScale 0.2s ease-in;
+        }
+
+        .loading-dot {
+            animation: loadingDotBlink 1.1s infinite alternate;
+        }
+
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.43s; }
+
+        /* Transition utilities */
+        .transition-smooth {
+            transition: all 0.3s ease;
+        }
+
+        .transition-fast {
+            transition: all 0.15s ease;
+        }
+
+        /* Hide scrollbar but keep functionality */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Custom hover effects */
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Category collapse animation */
+        .category-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .category-body.open {
+            max-height: 500px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen transition-smooth" data-theme="light">
+    
+    <!-- Floating Chat Button -->
+    <button 
+        id="chatbot-floating-btn" 
+        class="fixed bottom-8 right-8 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover-lift transition-smooth flex items-center justify-center text-2xl button-scale-in"
+        aria-label="Open FAQ Chatbot"
+        title="Open FAQ Chatbot"
+    >
+        💬
+    </button>
+
+    <!-- Chat Window -->
+    <div 
+        id="chatbot-window" 
+        class="fixed bottom-8 right-8 w-96 max-w-[96vw] max-h-[80vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 min-h-[520px] hidden chatbot-slide-in"
+    >
+        <!-- Header -->
+        <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-700 px-4 py-3 border-b border-gray-200 dark:border-gray-600 relative">
+            <!-- Theme Toggle -->
+            <button 
+                id="theme-toggle" 
+                class="absolute left-4 top-3 text-blue-600 dark:text-yellow-400 text-xl hover:opacity-100 opacity-70 transition-fast"
+                aria-label="Toggle theme"
+                title="Toggle theme"
+            >
+                🌙
+            </button>
+            
+            <!-- Title -->
+            <h3 class="text-lg font-bold text-gray-800 dark:text-white ml-10">FAQ Chatbot</h3>
+            
+            <!-- Controls -->
+            <div class="flex items-center space-x-2">
+                <button 
+                    id="minimize-btn" 
+                    class="text-blue-600 dark:text-yellow-400 hover:opacity-100 opacity-70 transition-fast text-xl"
+                    aria-label="Minimize"
+                    title="Minimize"
+                >
+                    ➖
+                </button>
+                <button 
+                    id="close-btn" 
+                    class="text-blue-600 dark:text-yellow-400 hover:opacity-100 opacity-70 transition-fast text-xl"
+                    aria-label="Close"
+                    title="Close"
+                >
+                    ❌
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Body -->
+        <div class="flex-1 flex flex-col">
+            <!-- Messages Area -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+                <!-- Messages will be populated here -->
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="hidden flex justify-center items-center py-2 space-x-1">
+                <span class="loading-dot text-blue-600 text-2xl">●</span>
+                <span class="loading-dot text-blue-600 text-2xl">●</span>
+                <span class="loading-dot text-blue-600 text-2xl">●</span>
+            </div>
+
+            <!-- Chat Input -->
+            <form id="chat-form" class="flex items-center p-2 space-x-2">
+                <input 
+                    type="text" 
+                    id="chat-input" 
+                    class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-fast"
+                    placeholder="Type your question..."
+                    autocomplete="off"
+                />
+                <button 
+                    type="submit" 
+                    id="send-btn"
+                    class="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center font-bold transition-fast disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    aria-label="Send"
+                >
+                    ▶
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="border-t border-gray-200 dark:border-gray-600 mx-3 opacity-50"></div>
+
+            <!-- FAQ Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg m-3 p-3 border border-gray-200 dark:border-gray-600">
+                <!-- FAQ Search -->
+                <div class="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-2 mb-3 space-x-2">
+                    <span class="text-gray-500">🔍</span>
+                    <input 
+                        type="text" 
+                        id="faq-search" 
+                        class="flex-1 bg-transparent text-gray-800 dark:text-white placeholder-gray-500 focus:outline-none"
+                        placeholder="Search FAQ..."
+                        aria-label="Search FAQ"
+                    />
+                    <button 
+                        id="search-clear" 
+                        class="text-gray-500 hover:text-yellow-500 transition-fast hidden"
+                        aria-label="Clear search"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <!-- FAQ Categories -->
+                <div id="faq-categories">
+                    <!-- FAQ categories will be populated here -->
+                </div>
+
+                <!-- FAQ Search Results -->
+                <div id="faq-search-results" class="hidden">
+                    <!-- Search results will be populated here -->
+                </div>
+
+                <!-- No Results Message -->
+                <div id="no-results" class="hidden text-center py-4 text-gray-500">
+                    <span>No FAQs matched. Try rewording, or send your question below!</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimized Bar -->
+    <div 
+        id="minimized-bar" 
+        class="fixed bottom-7 right-8 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-semibold cursor-pointer shadow-lg z-50 flex items-center space-x-2 opacity-90 hover:opacity-100 transition-smooth hidden"
+    >
+        <span>💬</span>
+        <span>FAQ Chatbot</span>
+    </div>
+
+    <script>
+        // FAQ Data
+        const CATEGORIZED_FAQS = [
+            {
+                category: "General",
+                faqs: [
+                    {
+                        question: "What is this FAQ chatbot?",
+                        answer: "It's an interactive chatbot that answers your frequently asked questions and can connect you to AI for more help."
+                    },
+                    {
+                        question: "How does the chatbot work?",
+                        answer: "You can type your question or pick from the FAQ list. The chatbot matches your question using keyword and fuzzy search, and responds accordingly."
+                    }
+                ]
+            },
+            {
+                category: "Account", 
+                faqs: [
+                    {
+                        question: "How do I create an account?",
+                        answer: "Click on the Sign Up button in the top navigation and fill out the registration form."
+                    },
+                    {
+                        question: "What if I forget my password?",
+                        answer: "Click on 'Forgot Password' on the login page and follow the instructions to reset your password."
+                    }
+                ]
+            },
+            {
+                category: "AI Support",
+                faqs: [
+                    {
+                        question: "What if my question isn't answered?",
+                        answer: "If your question isn't matched with our FAQs, the chatbot can attempt an AI-powered answer. Just send your query!"
+                    }
+                ]
+            }
+        ];
+
+        // Application State
+        let state = {
+            isOpen: false,
+            isMinimized: false,
+            theme: localStorage.getItem('faq_chatbot_theme') || 
+                   (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+            search: '',
+            faqOpenCategories: CATEGORIZED_FAQS.map(cat => cat.category),
+            chat: JSON.parse(sessionStorage.getItem('faq_chatbot_chat_history_v1')) || [
+                { role: 'bot', content: '👋 Hi! I\'m your FAQ chatbot. Ask a question, or check the FAQs below!', timestamp: Date.now() }
+            ],
+            faqMatches: [],
+            waitingForAi: false
+        };
+
+        // DOM Elements
+        const elements = {
+            floatingBtn: document.getElementById('chatbot-floating-btn'),
+            chatWindow: document.getElementById('chatbot-window'),
+            minimizedBar: document.getElementById('minimized-bar'),
+            themeToggle: document.getElementById('theme-toggle'),
+            minimizeBtn: document.getElementById('minimize-btn'),
+            closeBtn: document.getElementById('close-btn'),
+            chatMessages: document.getElementById('chat-messages'),
+            chatForm: document.getElementById('chat-form'),
+            chatInput: document.getElementById('chat-input'),
+            sendBtn: document.getElementById('send-btn'),
+            loadingIndicator: document.getElementById('loading-indicator'),
+            faqSearch: document.getElementById('faq-search'),
+            searchClear: document.getElementById('search-clear'),
+            faqCategories: document.getElementById('faq-categories'),
+            faqSearchResults: document.getElementById('faq-search-results'),
+            noResults: document.getElementById('no-results')
+        };
+
+        // Utility Functions
+        function keywordOrFuzzyMatch(input, faqs) {
+            input = input.trim().toLowerCase();
+            if (!input) return [];
+            
+            const byScore = [];
+            faqs.forEach(faq => {
+                const q = faq.question.toLowerCase();
+                if (q.includes(input)) {
+                    byScore.push({ faq, score: 2 });
+                    return;
+                }
+                
+                let matchCount = 0;
+                input.split(' ').forEach(word => {
+                    if (q.includes(word)) matchCount++;
+                });
+                if (matchCount > 0) {
+                    byScore.push({ faq, score: 1 + 0.1 * matchCount });
+                }
+            });
+            
+            byScore.sort((a, b) => b.score - a.score);
+            return byScore;
+        }
+
+        function getAllFaqsList() {
+            return CATEGORIZED_FAQS.flatMap(cat => 
+                cat.faqs.map(faq => ({ ...faq, category: cat.category }))
+            );
+        }
+
+        function saveChat() {
+            sessionStorage.setItem('faq_chatbot_chat_history_v1', JSON.stringify(state.chat));
+        }
+
+        function applyTheme() {
+            document.body.setAttribute('data-theme', state.theme);
+            document.documentElement.setAttribute('data-theme', state.theme);
+            localStorage.setItem('faq_chatbot_theme', state.theme);
+            elements.themeToggle.textContent = state.theme === 'light' ? '🌙' : '☀️';
+            
+            // Update body classes for theme
+            if (state.theme === 'dark') {
+                document.body.classList.add('dark');
+            } else {
+                document.body.classList.remove('dark');
+            }
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+            }, 100);
+        }
+
+        // Chat Functions
+        function addMessage(role, content, options = {}) {
+            const message = {
+                role,
+                content,
+                timestamp: Date.now(),
+                ...options
+            };
+            
+            state.chat.push(message);
+            saveChat();
+            renderMessages();
+            scrollToBottom();
+        }
+
+        function updateLastBotMessage(content) {
+            for (let i = state.chat.length - 1; i >= 0; i--) {
+                if (state.chat[i].role === 'bot') {
+                    state.chat[i].content = content;
+                    state.chat[i].isTemporary = false;
+                    break;
+                }
+            }
+            saveChat();
+            renderMessages();
+        }
+
+        function sendFeedback(msgIndex, helpful) {
+            state.chat[msgIndex].feedback = helpful;
+            saveChat();
+            renderMessages();
+        }
+
+        async function fakeAiFetch(text) {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            return `🤖 <i>This answer is generated by AI:</i><br/>Sorry, I couldn't find a matching FAQ. Here's my best guess: <br/><b>Your question:</b> ${text}`;
+        }
+
+        async function handleSend(text) {
+            if (!text.trim()) return;
+            
+            addMessage('user', text);
+            
+            const faqs = getAllFaqsList();
+            const results = keywordOrFuzzyMatch(text, faqs);
+            
+            if (results.length && results[0].score >= 2) {
+                addMessage('bot', results[0].faq.answer, { questionMatched: results[0].faq.question });
+            } else if (results.length) {
+                addMessage('bot', `I found a similar question: <b>${results[0].faq.question}</b><br/><i>${results[0].faq.answer}</i>`);
+            } else {
+                state.waitingForAi = true;
+                elements.loadingIndicator.classList.remove('hidden');
+                addMessage('bot', 'Let me check with our AI...', { isTemporary: true });
+                
+                try {
+                    const aiResponse = await fakeAiFetch(text);
+                    updateLastBotMessage(aiResponse);
+                } catch (error) {
+                    updateLastBotMessage("Sorry, couldn't fetch an AI response at the moment.");
+                }
+                
+                state.waitingForAi = false;
+                elements.loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        function renderMessages() {
+            elements.chatMessages.innerHTML = '';
+            
+            state.chat.forEach((msg, index) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex items-end space-x-2 animate__animated animate__fadeInUp ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center text-white text-lg';
+                avatar.style.background = msg.role === 'bot' ? 'linear-gradient(120deg, #2960c7 65%, #34495e)' : '#2960c7';
+                avatar.textContent = msg.role === 'bot' ? '🤖' : '🧑';
+                
+                const bubble = document.createElement('div');
+                bubble.className = `max-w-[88%] px-4 py-3 rounded-2xl text-sm shadow-sm ${
+                    msg.role === 'user' 
+                        ? 'bg-blue-600 text-white rounded-br-md' 
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white rounded-bl-md'
+                }`;
+                bubble.innerHTML = msg.content;
+                
+                if (msg.role === 'bot') {
+                    messageDiv.appendChild(avatar);
+                    messageDiv.appendChild(bubble);
+                    
+                    // Add feedback buttons for bot messages
+                    if (!msg.isTemporary && msg.feedback === undefined) {
+                        const feedbackDiv = document.createElement('div');
+                        feedbackDiv.className = 'flex space-x-1 ml-2';
+                        
+                        const thumbsUp = document.createElement('button');
+                        thumbsUp.className = 'text-yellow-500 hover:text-blue-600 transition-fast opacity-70 hover:opacity-100';
+                        thumbsUp.innerHTML = '👍';
+                        thumbsUp.title = 'This was helpful';
+                        thumbsUp.onclick = () => sendFeedback(index, true);
+                        
+                        const thumbsDown = document.createElement('button');
+                        thumbsDown.className = 'text-yellow-500 hover:text-blue-600 transition-fast opacity-70 hover:opacity-100';
+                        thumbsDown.innerHTML = '👎';
+                        thumbsDown.title = 'This was not helpful';
+                        thumbsDown.onclick = () => sendFeedback(index, false);
+                        
+                        feedbackDiv.appendChild(thumbsUp);
+                        feedbackDiv.appendChild(thumbsDown);
+                        messageDiv.appendChild(feedbackDiv);
+                    } else if (msg.feedback !== undefined) {
+                        const result = document.createElement('div');
+                        result.className = 'text-xs opacity-70 ml-2';
+                        result.textContent = msg.feedback 
+                            ? 'Thank you for your feedback! 👍' 
+                            : "Sorry this wasn't helpful. We'll improve! 👎";
+                        messageDiv.appendChild(result);
+                    }
+                } else {
+                    messageDiv.appendChild(bubble);
+                    messageDiv.appendChild(avatar);
+                }
+                
+                elements.chatMessages.appendChild(messageDiv);
+            });
+        }
+
+        function handleFaqClick(faq) {
+            state.search = '';
+            elements.faqSearch.value = '';
+            elements.searchClear.classList.add('hidden');
+            handleSend(faq.question);
+            renderFaqList();
+        }
+
+        function toggleCategory(category) {
+            const index = state.faqOpenCategories.indexOf(category);
+            if (index > -1) {
+                state.faqOpenCategories.splice(index, 1);
+            } else {
+                state.faqOpenCategories.push(category);
+            }
+            renderFaqList();
+        }
+
+        function renderFaqList() {
+            if (state.search.trim()) {
+                renderSearchResults();
+            } else {
+                renderCategories();
+            }
+        }
+
+        function renderSearchResults() {
+            elements.faqCategories.classList.add('hidden');
+            elements.faqSearchResults.classList.remove('hidden');
+            elements.noResults.classList.add('hidden');
+            
+            const matches = keywordOrFuzzyMatch(state.search, getAllFaqsList());
+            
+            if (matches.length === 0) {
+                elements.faqSearchResults.classList.add('hidden');
+                elements.noResults.classList.remove('hidden');
+                return;
+            }
+            
+            elements.faqSearchResults.innerHTML = '';
+            
+            matches.forEach(({ faq }) => {
+                const item = document.createElement('div');
+                item.className = 'p-2 cursor-pointer rounded-md hover:bg-blue-50 dark:hover:bg-gray-600 transition-fast';
+                item.onclick = () => handleFaqClick(faq);
+                
+                const question = document.createElement('div');
+                question.className = 'font-medium text-gray-800 dark:text-white';
+                question.textContent = faq.question;
+                
+                const answer = document.createElement('div');
+                answer.className = 'text-sm text-gray-600 dark:text-gray-300 mt-1';
+                answer.textContent = faq.answer;
+                
+                item.appendChild(question);
+                item.appendChild(answer);
+                elements.faqSearchResults.appendChild(item);
+            });
+        }
+
+        function renderCategories() {
+            elements.faqSearchResults.classList.add('hidden');
+            elements.noResults.classList.add('hidden');
+            elements.faqCategories.classList.remove('hidden');
+            
+            elements.faqCategories.innerHTML = '';
+            
+            CATEGORIZED_FAQS.forEach(cat => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'mb-2 border-b border-gray-200 dark:border-gray-600 rounded-md';
+                
+                const header = document.createElement('div');
+                header.className = 'flex items-center font-medium p-2 text-blue-600 dark:text-yellow-400 cursor-pointer hover:text-blue-800 dark:hover:text-yellow-300 transition-fast';
+                header.onclick = () => toggleCategory(cat.category);
+                
+                const icon = document.createElement('span');
+                icon.className = 'mr-2';
+                icon.textContent = state.faqOpenCategories.includes(cat.category) ? '▼' : '▶';
+                
+                const title = document.createElement('span');
+                title.textContent = cat.category;
+                
+                header.appendChild(icon);
+                header.appendChild(title);
+                
+                const body = document.createElement('div');
+                body.className = `category-body pl-6 ${state.faqOpenCategories.includes(cat.category) ? 'open' : ''}`;
+                
+                if (state.faqOpenCategories.includes(cat.category)) {
+                    cat.faqs.forEach(faq => {
+                        const item = document.createElement('div');
+                        item.className = 'p-2 cursor-pointer text-gray-800 dark:text-white hover:bg-blue-50 dark:hover:bg-gray-600 rounded-md transition-fast';
+                        item.onclick = () => handleFaqClick(faq);
+                        
+                        const question = document.createElement('div');
+                        question.className = 'font-medium';
+                        question.textContent = faq.question;
+                        
+                        item.appendChild(question);
+                        body.appendChild(item);
+                    });
+                }
+                
+                categoryDiv.appendChild(header);
+                categoryDiv.appendChild(body);
+                elements.faqCategories.appendChild(categoryDiv);
+            });
+        }
+
+        function handleSearch() {
+            state.search = elements.faqSearch.value;
+            
+            if (state.search.trim()) {
+                elements.searchClear.classList.remove('hidden');
+                state.faqMatches = keywordOrFuzzyMatch(state.search, getAllFaqsList());
+            } else {
+                elements.searchClear.classList.add('hidden');
+                state.faqMatches = [];
+            }
+            
+            renderFaqList();
+        }
+
+        function clearSearch() {
+            state.search = '';
+            elements.faqSearch.value = '';
+            elements.searchClear.classList.add('hidden');
+            renderFaqList();
+        }
+
+        // Window Controls
+        function toggleChatbot() {
+            if (state.isMinimized) {
+                state.isMinimized = false;
+                elements.minimizedBar.classList.add('hidden');
+                elements.chatWindow.classList.remove('hidden');
+                elements.floatingBtn.classList.add('hidden');
+                scrollToBottom();
+            } else {
+                state.isOpen = !state.isOpen;
+                if (state.isOpen) {
+                    elements.chatWindow.classList.remove('hidden');
+                    elements.floatingBtn.classList.add('hidden');
+                    scrollToBottom();
+                } else {
+                    elements.chatWindow.classList.add('hidden');
+                    elements.floatingBtn.classList.remove('hidden');
+                }
+            }
+        }
+
+        function minimizeChatbot() {
+            state.isMinimized = true;
+            elements.chatWindow.classList.add('hidden');
+            elements.minimizedBar.classList.remove('hidden');
+            elements.floatingBtn.classList.add('hidden');
+        }
+
+        function closeChatbot() {
+            state.isOpen = false;
+            state.isMinimized = false;
+            elements.chatWindow.classList.add('hidden');
+            elements.minimizedBar.classList.add('hidden');
+            elements.floatingBtn.classList.remove('hidden');
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'light' ? 'dark' : 'light';
+            applyTheme();
+        }
+
+        // Event Listeners
+        elements.floatingBtn.addEventListener('click', toggleChatbot);
+        elements.minimizedBar.addEventListener('click', toggleChatbot);
+        elements.minimizeBtn.addEventListener('click', minimizeChatbot);
+        elements.closeBtn.addEventListener('click', closeChatbot);
+        elements.themeToggle.addEventListener('click', toggleTheme);
+
+        elements.chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = elements.chatInput.value.trim();
+            if (text && !state.waitingForAi) {
+                handleSend(text);
+                elements.chatInput.value = '';
+            }
+        });
+
+        elements.faqSearch.addEventListener('input', handleSearch);
+        elements.searchClear.addEventListener('click', clearSearch);
+
+        // Mobile responsiveness
+        function handleResize() {
+            if (window.innerWidth <= 640) {
+                if (state.isOpen && !state.isMinimized) {
+                    elements.chatWindow.style.bottom = '0';
+                    elements.chatWindow.style.right = '0';
+                    elements.chatWindow.style.left = '0';
+                    elements.chatWindow.style.width = '100vw';
+                    elements.chatWindow.style.maxWidth = '100vw';
+                    elements.chatWindow.style.minHeight = '100vh';
+                    elements.chatWindow.style.borderRadius = '0';
+                    elements.chatWindow.style.maxHeight = '100vh';
+                }
+            } else {
+                elements.chatWindow.style.bottom = '2rem';
+                elements.chatWindow.style.right = '2rem';
+                elements.chatWindow.style.left = 'auto';
+                elements.chatWindow.style.width = '24rem';
+                elements.chatWindow.style.maxWidth = '96vw';
+                elements.chatWindow.style.minHeight = '520px';
+                elements.chatWindow.style.borderRadius = '1rem';
+                elements.chatWindow.style.maxHeight = '80vh';
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+
+        // Initialize
+        applyTheme();
+        renderMessages();
+        renderFaqList();
+        handleResize();
+    </script>
+</body>
 </html>
